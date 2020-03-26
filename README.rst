@@ -58,7 +58,7 @@ For this tutorial we created a git repository containing some vulnerable code an
 
 .. code-block:: sh
 
- git clone https://github.com/x7-labs/git-code-annotate.git
+ git clone https://github.com/x7-labs/git-code-annotate-tutorial.git
 
 This tutorial repository contains a file called vuln.c that has the following contents.
 
@@ -89,7 +89,7 @@ To integrate our annotation tool and keep the original code intact (and compilin
 
 .. code-block:: sh
 
-    cd annotation-tutorial
+    cd git-code-annotate-tutorial
     git branch annotation
     git checkout annotation
 
@@ -109,7 +109,7 @@ We use a tool called restview to visualize the annotation in the browser. Now it
         git-code-annotate --view
 
 The reviewer now wants to mark that a vulnerability was found in the parse funtion. For that purpose he will edit the vuln.c file, add his rst formatted comments in there.
-Modify vuln.c to add an annotation, save it  and run ./generate_code_annotation.py you browser should self refresh
+Modify vuln.c to add an annotation, save it  and run git-code-annoate your browser should self refresh
 
 .. code-block:: c
 
@@ -151,7 +151,7 @@ After making the modification run git-code-annotate
 While not needed the reviewer also made sure that the code would still compile after adding the comments by putting
 the review inside a comment block
 
-After runnning git-code-annoate the browser will have self refreshed and you should see your first annotation.
+After runnning git-code-annotate the browser will have self refreshed and you should see your first annotation.
 
 Annotating inside code
 
@@ -195,11 +195,11 @@ in that section. The most elegant way of hanling this is to copy the code and in
         }
 
 
-and run ./generate_code_annotation.py to see the result. This is an iterative process
+and run git-code-annotate to see the result. This is an iterative process
 
 .. code-block:: sh
 
-    ./generate_code_annotation.py
+    git-code-annoate
 
 When you are happy with the changes you are free to commit the change into the annotation branch.
 Commit your code (as described in the example section) and push back to our tutotial server. 
@@ -209,23 +209,32 @@ Commit your code (as described in the example section) and push back to our tuto
     git add vuln.c
     git commit -m "vuln.c review"
 
-If you followed this tutorial you should now have a rst file that will render like `this <emo/annotate/code_annotations.rst>`_
+If you followed this tutorial you should now have a rst file that will render like `this <https://github.com/x7-labs/git-code-annotate-tutorial/blob/demo/git_code_annotations.rst>`_
 
 Configuration
 =============
 
-The annotation tool create web links to the original hosted source code for the reader to be able to have context. To configure what url to use the annoate directory also contains a config.yml file with meta information about the review for the tutorial example the branch under review is the master branch and the base_url is given bellow.
+The annotation tool creates web links to the original hosted source code so that the reader can have able to have context on the annotation. To configure what url to use the annotate directory also read a configuration file stored in the root directory called .git-code-annoation.yml. 
+
+Generate the initial configuration
+
+.. code-block:: sh
+
+        git-code-annotate --generate_config
+
+For the tutorial above one needs to modify the base_url to point to github.
 
 .. code-block:: sh
 
         config:
             branch_under_review: master
-            base_url: "https://otation-tutorial/-/blob/master/"
+            base_url: "https://github.com/x7-labs/git-code-annotate-tutorial/blob/master/"
 
-When making modification to the config commit the configuation changes to the repository with  acommit message starting with "dev:..." else the configuration changes will be seen as review comments
+If you want to add the configuration to the repository this might create problems because the configuration will be viewed as an annotation. There are several ways around this. you can add the configuration
+to the git repository *before* creating the annotation branch. Therefore the differences between the master branch and the annotation branch will only contain the differences. The second way to work around this problem is by making the commit in the annotation branch and commiting the message starting with "dev:" and making sure it is the first commit on the branch.
 
 .. code-block:: sh
 
-    git add config.yml
+    git add .git-code-annoation.yml
     git commit -m "dev:modify configuration"
 
