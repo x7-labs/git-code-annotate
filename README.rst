@@ -102,12 +102,10 @@ We are ready for the first run.
 
 This will create an file called git-code-annotations.rst in the top directory. Given we did not annotate anything yet it  will not contain annotations.
 
-We use a tool called restview to visualize the annotation in the browser. Now it a good time to see how it works for you. Run  git-code-annotate --view . This will start a webserver that can render rst and opens a browser(or tab) automatically. 
+We use a tool called restview to visualize the annotation in the browser. Now it a good time to see how it works for you. Run  restview git-code-annotations.rst. This will start a webserver that can render rst and opens a browser(or tab) automatically. 
 
 .. code-block:: sh
 
-        git-code-annotate --view
-        # if this does not work use or any other rst viewer
         restview git-code-annotations.rst
 
 The reviewer now wants to mark that a vulnerability was found in the parse funtion. For that purpose he will edit the vuln.c file, add his rst formatted comments in there.

@@ -13,14 +13,14 @@ current_version = 2
 
 default_configuration ="""
 #
-# Configuration for the git-code-annoate tool 
+# Configuration for the git-code-annoate tool
 #
 config:
 # When doing annotations the "untouched" code is normally on a different branch
 # e.g. the master branch and the annotation tool is being run on an annotation branch
-# that is expected to be the currently checked out branch. All changes on the 
+# that is expected to be the currently checked out branch. All changes on the
 # annotation branch are considered annotations.. unless the commit message starts the word
-# "dev". This allows to commit changes to this script or the outout of this script 
+# "dev". This allows to commit changes to this script or the outout of this script
 # into the annotation branch
     branch_under_review: origin/master
 
@@ -92,6 +92,9 @@ def _post_process_annotation(a):
     # parse for commands
     for i in range(0,len(a.rst)):
         c = a.rst[i]
+        # bug??
+        if c is None:
+            continue
         if commands.match(c):
             command,value = commands.match(c).groups()
             if command == "INCLUDE":
@@ -192,21 +195,8 @@ def do_run(top_level,branch_under_review,base_url):
 
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
-    parser.add_argument('--view', action="store_true")
     parser.add_argument('--generate_config', action="store_true")
     args = parser.parse_args()
-
-    if args.view:
-        cmd = "restview git_code_annotations.rst"
-        print("Invoking: %s" % cmd)
-        p = subprocess.run(cmd, capture_output=True, shell=True, text=True)
-        if p.returncode != 0:
-            print("git-code-annotate: failed to launch restview")
-            print(p.stdout)
-            print(p.stderr)
-            sys.exit(p.returncode)
-        sys.exit(0)
-
 
     p = subprocess.run("git rev-parse --show-toplevel", capture_output=True, shell=True, text=True)
     if p.returncode != 0:
