@@ -107,6 +107,8 @@ We use a tool called restview to visualize the annotation in the browser. Now it
 .. code-block:: sh
 
         git-code-annotate --view
+        # if this does not work use or any other rst viewer
+        restview git-code-annotations.rst
 
 The reviewer now wants to mark that a vulnerability was found in the parse funtion. For that purpose he will edit the vuln.c file, add his rst formatted comments in there.
 Modify vuln.c to add an annotation, save it  and run git-code-annoate your browser should self refresh
