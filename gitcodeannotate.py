@@ -9,6 +9,8 @@ import yaml
 import sys
 import argparse
 
+current_version = 2
+
 default_configuration ="""
 #
 # Configuration for the git-code-annoate tool 
@@ -25,8 +27,9 @@ config:
 # When generating rst code links are greated to the original source code that is expected
 # to be hosted somewhere. base_url gets concatnated with the modified file
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
-    version: 2
-"""
+    version: {}
+""".format(current_version)
+
 default_configuration_file_name =".git-code-annotate.yml"
 
 class Annotation:
@@ -195,7 +198,7 @@ def main():
 
     if args.view:
         cmd = "restview git_code_annotations.rst"
-        print("Running: %s" % cmd)
+        print("Invoking: %s" % cmd)
         p = subprocess.run(cmd, capture_output=True, shell=True, text=True)
         if p.returncode != 0:
             print("git-code-annotate: failed to launch restview")
@@ -236,5 +239,12 @@ def main():
     version = int("1")
     if 'version' in cfg['config']:
         version = int(cfg['config']['version'])
+
+    if version > current_version:
+        print("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
+        sys.exit(2)
     
     do_run(top_level,branch_under_review,base_url)
+
+if __name__ == "__main__":
+    main()
