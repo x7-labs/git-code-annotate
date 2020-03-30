@@ -9,8 +9,6 @@ import yaml
 import sys
 import argparse
 
-
-
 default_configuration ="""
 #
 # Configuration for the git-code-annoate tool 
@@ -27,6 +25,7 @@ config:
 # When generating rst code links are greated to the original source code that is expected
 # to be hosted somewhere. base_url gets concatnated with the modified file
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
+    version: 2
 """
 default_configuration_file_name =".git-code-annotate.yml"
 
@@ -97,7 +96,6 @@ def _post_process_annotation(a):
                 a.rst[i] = ""
     return a
 
-
 def create_annotations_from_patch(patch):
     # This is where the magic happens, a unified diff formatted patch 
     # as for example created by git diff get parsed. To make things easy
@@ -126,7 +124,6 @@ def create_annotations_from_patch(patch):
         sys.exit(2)
     return annotations
 
-
 #
 # the rest of this script is more about .. formating and generating rst for the annotations
 #
@@ -135,7 +132,6 @@ def convert_annotation_to_rst(a,base_url):
     file_link = "{}{}#L{}".format(base_url,a.file,a.start)
     return "\n".join(a.rst) + "\n\nSource: `{} <{}>`_".format(file_name ,file_link) + "\n\n"
 
-    
 def do_verbatim_include(fh,a,revision):
     if a.include_length >0:
         cmd = "git show {}:{}".format(revision,a.file)
@@ -145,11 +141,8 @@ def do_verbatim_include(fh,a,revision):
         fh.write("\n    ".join(selection))
         fh.write("\n\n")
 
-
-
-
 def do_run(top_level,branch_under_review,base_url):
-    f1=open('git_code_annotations.rst', 'w')
+    f1=open('git_code_annotations.rst', 'w',encoding='utf-8')
 
     # add some rst to force the heading order
     f1.write ("Annotation report\n")
@@ -162,8 +155,6 @@ def do_run(top_level,branch_under_review,base_url):
     if len(data) >0:
         f1.write ("\n\n")
         f1.write (".. note::\n\t\tAnnotation contains uncommited changes\n\n")
-
-
 
     # By default compare against the master branch
     base_commit=branch_under_review
@@ -224,12 +215,12 @@ def main():
 
     if args.generate_config:
         print("\nCreated a new configuration file: %s. to add it to the git repository and skip it from annocation please commit it using the following message 'dev:add git-code-annotate config' e.g. \n\n git add %s \n git commit -m \"dev:add .git-code-annotate config\" " % (config_file,config_file))
-        with open(config_file, 'w') as ymlfile:
+        with open(config_file, 'w', encoding='utf-8') as ymlfile:
             ymlfile.write(default_configuration)
             ymlfile.close()
 
     if os.path.isfile(config_file):
-        with open(config_file, 'r') as ymlfile:
+        with open(config_file, 'r',encoding='utf-8') as ymlfile:
             cfg = yaml.load(ymlfile,Loader=yaml.BaseLoader)
     else:
         cfg = yaml.load(default_configuration,Loader=yaml.BaseLoader)
@@ -242,5 +233,8 @@ def main():
     # into the annotation branch
     branch_under_review= cfg['config']['branch_under_review']
     base_url= cfg['config']['base_url']
+    version = int("1")
+    if 'version' in cfg['config']:
+        version = int(cfg['config']['version'])
     
     do_run(top_level,branch_under_review,base_url)
