@@ -41,8 +41,6 @@ setup(
 
         # Pick your license as you wish
         'License :: OSI Approved :: MIT License',
-
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
@@ -59,9 +57,9 @@ setup(
     # called `my_module.py` to exist:
     #
     py_modules=["gitcodeannotate"],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
 
-    install_requires=['unidiff','restview'],
+    install_requires=['unidiff'],
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
