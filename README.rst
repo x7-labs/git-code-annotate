@@ -2,47 +2,36 @@ Documentation for the annotation tool
 -------------------------------------
 
 The annotation tool allows to annotate code stored in a git repository.
-
-The basic concept for the tool is to branch of the code that need to be reviewed and add review comments inside the source code of that branch
+The basic concept for the tool is to branch of the code that need to be reviewed and add review comments inside the source code of that branch. The differences between the branches are the annotations.
 
 
 .. code-block::
 
     master branch
-       \___annotate  <-- here go the changes into commits -->
+       \___annotation  <-- here go te anntations into commits -->
 
 
 
 Annotation syntax
 =================
 
-Annotation have to writen in `Restructured Text (reST) <https://thomas-cokelaer.info/tutorials/sphinx/rest_syntax.html>`_
+All additions to the code are seen as annotations and the annotation tool will provide some contents. That said some preprosessing on the annotations is performed
 
-* The first and last line of review may contain a start and stop of a block coment these will be removed.
-* Lines may start with # or // .These comment markers (only the markers) will be removed.
-* Definition lists, tables, links are allowed.
-* Reviews can be split into commits. every commit is also RST formatted and will be included into the resulting report.
-* A special INCLUDE:N directive allows to include the N lines of code bellow the comment.
 
+* Annotations may start with an enpty comment line
+* Lines may start with # , //, */ or /*. These comment markers and the white spaces that before those markers will be removed.
+* Annotation may contain tag:value pairs
 
 .. code-block:: c
 
         /*
-        Review title
-        ------------
-
-        risk
-            low | medium | high
-
-        review comments
-
-        INCLUDE:12
+        Review:
+        Reviewer: keesj
+        issues: 1
         */
         void main(int argc, char** argv){
         ...
 
-Annotations are grouped together into git commits and the git commits messages themself will be added to the review
-comment.
 
 Tutorial
 ========
@@ -94,22 +83,14 @@ To integrate our annotation tool and keep the original code intact (and compilin
     git checkout annotation
 
 
-We are ready for the first run.
+We are ready for the first run. As we did not add any annotation the output of the following should be empty
 
 .. code-block:: sh
 
     git-code-annotate
 
-This will create an file called git-code-annotations.rst in the top directory. Given we did not annotate anything yet it  will not contain annotations.
-
-We use a tool called restview to visualize the annotation in the browser. Now it a good time to see how it works for you. Run  restview git-code-annotations.rst. This will start a webserver that can render rst and opens a browser(or tab) automatically. 
-
-.. code-block:: sh
-
-        restview git-code-annotations.rst
-
-The reviewer now wants to mark that a vulnerability was found in the parse funtion. For that purpose he will edit the vuln.c file, add his rst formatted comments in there.
-Modify vuln.c to add an annotation, save it  and run git-code-annoate your browser should self refresh
+The reviewer now wants to mark that a vulnerability was found in the parse funtion. For that purpose he will edit the vuln.c file, add his formatted comments in there.
+Modify vuln.c to add an annotation, save it  and run git-code-annotate.
 
 .. code-block:: c
 
@@ -127,7 +108,7 @@ Modify vuln.c to add an annotation, save it  and run git-code-annoate your brows
 
         The code listed here uses the strcmp function on a user provided input. Using strmp
         is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
-        INCLUDE:4
+        Issues: 1
         */
         void parse(char *buf) {
             if (strcmp(buf, TEST_STR))
@@ -146,17 +127,38 @@ After making the modification run git-code-annotate
 
 .. code-block:: sh
 
-    git-code-annotate
+    	git-code-annotate
+
+
+Sample outout
+
+.. code-block:: sh
+
+	Looking at file vuln.c:9 :
+	A    9 :
+	A   10 : Unsafe use of strcmp
+	A   11 : --------------------
+	A   12 :
+	A   13 : The code listed here uses the strcmp function on a user provided input. Using strmp
+	A   14 : is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
+	A   15 : Issues: 1
+	A   16 :
+	    17 : void parse(char *buf) {
+	    18 :        if (strcmp(buf, TEST_STR))
+	    19 :                printf("parsed test\n");
+	    20 : }
+	    21 :
+	    22 : int main() {
+	    23 :        void *buf = malloc(BUF_SIZE);
+	    24 :        read(0, buf, BUF_SIZE);
+	    25 :        parse((char *)buf);
+	    26 :        return 0;
 
 While not needed the reviewer also made sure that the code would still compile after adding the comments by putting
 the review inside a comment block
 
-After runnning git-code-annotate the browser will have self refreshed and you should see your first annotation.
-
-Annotating inside code
-
-During review we found that when using the INCLUDE directive we where still sometimes having trouble documenting the code section or wanting to include more comments
-in that section. The most elegant way of hanling this is to copy the code and insert it into the annotation section. for vuln.c this looks like this (e.g. adding a .. code-block:: c section and the copy of the code ). So try and remove the INCLUDE directive and copy the function that requires annotation.
+It is is also possible to annotate inside code. In such event git-code-annotate will also autmatically include more context on the method. add the text `/* This text will also be seen as an annotation */`
+inside the pasr function and run git-code-annotate again.
 
 .. code-block:: c
 
@@ -165,24 +167,19 @@ in that section. The most elegant way of hanling this is to copy the code and in
         #include <stdlib.h>
         #include <unistd.h>
 
-        #define BUF_SIZE	1024
-        #define TEST_STR	"test"
-
+        #define BUF_SIZE    1024
+        #define TEST_STR    "test"
+        
         /*
         Unsafe use of strcmp
         --------------------
 
         The code listed here uses the strcmp function on a user provided input. Using strmp
         is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
-
-        .. code-block:: c
-        
-                void parse(char *buf) {
-                    if (strcmp(buf, TEST_STR))   <!-- THIS IS BAD -->
-                        printf("parsed test\n");
-                }
+        Issues: 1
         */
         void parse(char *buf) {
+            /* This text will also be seen as an annotation */
             if (strcmp(buf, TEST_STR))
                 printf("parsed test\n");
         }
@@ -194,7 +191,6 @@ in that section. The most elegant way of hanling this is to copy the code and in
             return 0;
         }
 
-
 and run git-code-annotate to see the result. This is an iterative process
 
 .. code-block:: sh
@@ -202,19 +198,54 @@ and run git-code-annotate to see the result. This is an iterative process
     git-code-annoate
 
 When you are happy with the changes you are free to commit the change into the annotation branch.
-Commit your code (as described in the example section) and push back to our tutotial server. 
 
 .. code-block:: c
 
     git add vuln.c
     git commit -m "vuln.c review"
 
-If you followed this tutorial you should now have a rst file that will render like `this <https://github.com/x7-labs/git-code-annotate-tutorial/blob/demo/git_code_annotations.rst>`_
+If you followed this tutorial the output of running git-code-annotate should look like the following
+
+
+.. code-block:: sh
+
+	Looking at file vuln.c:9 :
+	A    9 :
+	A   10 : Unsafe use of strcmp
+	A   11 : --------------------
+	A   12 :
+	A   13 : The code listed here uses the strcmp function on a user provided input. Using strmp
+	A   14 : is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
+	A   15 : Issues: 1
+	A   16 :
+	    17 : void parse(char *buf) {
+
+
+	Looking at file vuln.c:18 :
+	    15 : Issues: 1
+	    16 :
+	    17 : void parse(char *buf) {
+	A   18 :  This text will also be seen as an annotation
+	    19 :        if (strcmp(buf, TEST_STR))
+	    20 :                printf("parsed test\n");
+	    21 : }
+	    22 :
+	    23 : int main() {
+	    24 :        void *buf = malloc(BUF_SIZE);
+	    25 :        read(0, buf, BUF_SIZE);
+	    26 :        parse((char *)buf);
+	    27 :        return 0;
+	    28 : }
+
+
 
 Configuration
 =============
 
-The annotation tool creates web links to the original hosted source code so that the reader can have able to have context on the annotation. To configure what url to use the annotate directory also read a configuration file stored in the root directory called .git-code-annoation.yml. 
+The annotation tool creates text formated in the form of filename.c:linenumber. This is recognized by tools  (like vs code) and clicking on them will open the file under review
+at the correct location.
+
+The tool can also generate links to the original (non annotated code). For that to work the configuration need to be adapted.
 
 Generate the initial configuration
 
@@ -237,4 +268,7 @@ to the git repository *before* creating the annotation branch. Therefore the dif
 
     git add .git-code-annoation.yml
     git commit -m "dev:modify configuration"
+    git rebase -i master
+    #edit the commits in such a way that the "dev:" commits are on top and save the file
+    
 
