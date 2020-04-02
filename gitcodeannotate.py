@@ -9,7 +9,7 @@ import yaml
 import sys
 import argparse
 
-current_version = 2
+current_version = 3
 
 default_configuration ="""
 #
@@ -34,20 +34,19 @@ config:
 default_configuration_file_name =".git-code-annotate.yml"
 
 class Annotation:
-    def __init__(self, f_name, a_start):
+    def __init__(self, f_name, source_start, target_start):
         self.std_tags = [ 'reviewer','issues','warnings','issue','warning','include','review','notes']
         self.std_tags.append("issuses")
         self.tags = list()
 
         self.context = list()
-        self.file = f_name        # file where the annotation applies
-        self.start  = a_start      # diff start 
-        self.a_start = None
-        self.a_end = 0 #not set to None for start_new_annotation
+        self.file = f_name                # file where the annotation applies
+        self.target_start  = target_start # diff target start 
+        self.source_start  = source_start # diff source start
+        self.a_start = None               # start of the acutal annotation
+        self.a_end = 0                    #not set to None for start_new_annotation
 
-        self.is_inline_comment = False
-        self.include_length = 0 # amount of lines to include in the report
-        self.include_contents =list()
+        self.is_inline_comment = False    # inline annotation get a different treatment
 
     def start_new_annotation(self):
         # it happens that within a single chunk you have multiple annotations
@@ -66,24 +65,31 @@ class Annotation:
         if is_annotation and not self.a_start:
             self.a_start = len(self.context) -1
 
-    def setIncludeLength(self, length):
-        self.include_length = length
-
+# Used in the regexps.. because python regexp returns a list of groups when the *or* operator is used
 def first_non_none(list):
     for i in list:
         if i:
             return i
     return ""
 
+def convert_annotation_to_txt(a):
+    pre_lines = 3
+
+    start = a.a_start - pre_lines 
+    if not a.is_inline_comment:
+        start += pre_lines
+
+    # Who said python code has to be redable? 
+    str = "Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
+    return str
+
 def _post_process_annotation(a):
     """ Process the annotation and do some magic parsing on the rst contents """
 
-    #print("context:{} start:{} end:{} ".format(len(a.context), a.a_start, a.a_end))
-    #print("Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} :{}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(len(a.context)) ]))
     # matches /* and */
     empty_comment = re.compile('^\W*/\*\W*$|^\W*\*\/\W*$')
 
-    # matches comment markers return the remainder
+    # matches comment markers and return the remainder
     patterns = [
         "^\W*#(.*)$",     # matches #
         "^\W*//(.*)$",    # matches //
@@ -91,7 +97,6 @@ def _post_process_annotation(a):
         "^\W*/\*(.*)$",   # matches /* (start of comment)
         "^\W*\*/(.*)$",   # matches */ (end of comment)
         "^\W*\*(.*)$",    # matches  * (like javadoc style multiline)
-     
     ]
     line_start_by_comment = re.compile("|".join(patterns))
 
@@ -139,27 +144,17 @@ def _post_process_annotation(a):
 
         if in_tag and line_start_by_space.match(c):
                 a.tags[len(a.tags)-1][1]=  a.tags[len(a.tags)-1][1]  +"\n" + value
-                print("Multline tag %s -- %s" % (last_tag,c))
+                #print("Multline tag %s -- %s" % (last_tag,c))
                 continue
 
         in_tag = False
-    pre_lines = 3
-
-    start = a.a_start - pre_lines 
-    if not a.is_inline_comment:
-        start += pre_lines
-
-    print("Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} :{}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ]))
-    print("")
     return a
 
 def create_annotations_from_patch(patch):
     # This is where the magic happens, a unified diff formatted patch 
-    # as for example created by git diff get parsed. To make things easy
-    # the patch is created with the -U0 option (no context lines)
-    # a patch gets converted into annotations
-    # PatchSet does not accept a single string e.g. something goes
-    # wrong when a non iterable object gets passed.
+    # as for example created by git diff get parsed and gets converted 
+    # into annotations
+
     annotations = list()
     try:
         pset = PatchSet(patch)
@@ -167,62 +162,35 @@ def create_annotations_from_patch(patch):
             # Parse hunks , create annotation 
 
             for hunk in mod_files:
-                a = Annotation(mod_files.path,hunk.source_start)
+                a = Annotation(mod_files.path, hunk.source_start, hunk.target_start)
                 offset = 0
                 for line in hunk.target:
                     if line[0] == '+':
                         if a.start_new_annotation():
+                            # A single hund can contain multiple annotations we create and annotation
+                            # object for every section of added content
                             annotations.append(_post_process_annotation(a))
-                            b = Annotation(mod_files.path,hunk.source_start)
+                            b = Annotation(mod_files.path, hunk.source_start, hunk.target_start)
+                            # copy lines from the previous annotation for context 
                             for i in a.context:
-                                b.addContext(i)
+                                b.addContext(i,False)
                             a = b
-                        a.addContext([hunk.source_start + offset,format(line[1:].rstrip())],True)
+                        a.addContext([hunk.target_start + offset,format(line[1:].rstrip())],True)
+
                     #keep track of the offset compared to the hunk
                     elif line[0] not in ['+','-']:
-                        a.addContext([hunk.source_start + offset,format(line.rstrip())])
+                        a.addContext([hunk.source_start + offset,format(line[1:].rstrip())])
                     if line[0] != '-':
                         offset += 1
                 annotations.append(_post_process_annotation(a))
- 
-
     except Exception:
         traceback.print_exc(file=sys.stdout)
         sys.exit(2)
     return annotations
 
-#
-# the rest of this script is more about .. formating and generating rst for the annotations
-#
-def convert_annotation_to_rst(a,base_url):
-    file_name = "{} line {}".format(a.file, a.start)
-    file_link = "{}{}#L{}".format(base_url,a.file,a.start)
-    lines =[ i[1] for i in a.context]
-    return "\n".join(lines) + "\n\nSource: `{} <{}>`_".format(file_name ,file_link) + "\n\n"
 
-def do_verbatim_include(fh,a,revision):
-    if a.include_length >0:
-        cmd = "git show {}:{}".format(revision,a.file)
-        data = subprocess.getoutput(cmd)
-        selection = data.split("\n")[a.start:a.start + a.include_length]
-        fh.write("\n.. code-block:: c\n\n    ")
-        fh.write("\n    ".join(selection))
-        fh.write("\n\n")
+def do_run(top_level,branch_under_review,base_url, args):
 
-def do_run(top_level,branch_under_review,base_url):
-    f1=open('git_code_annotations.rst', 'w',encoding='utf-8')
-
-    # add some rst to force the heading order
-    f1.write ("Annotation report\n")
-    f1.write ("*****************\n\n")
-
-    #
-    # Special handing for uncommited changes do a diff and produce the output
-    #
-    data  = subprocess.getoutput("git diff")
-    if len(data) >0:
-        f1.write ("\n\n")
-        f1.write (".. note::\n\t\tAnnotation contains uncommited changes\n\n")
 
     # By default compare against the master branch
     base_commit=branch_under_review
@@ -244,19 +212,21 @@ def do_run(top_level,branch_under_review,base_url):
             break
 
     #data  = subprocess.getoutput("git diff %s" % base_commit)
-    data  = subprocess.getoutput("git diff  -U10 %s" % base_commit)
-    annotations = create_annotations_from_patch(data)
-    for a in annotations:
-        f1.write ("\n")
-        f1.write(convert_annotation_to_rst(a,base_url))
-        do_verbatim_include(f1,a,branch_under_review)
+    diff  = subprocess.getoutput("git diff  -U10 %s" % base_commit)
 
-    f1.close()
+    if  args.show_diff:
+        print(diff)
+        return
+
+    annotations = create_annotations_from_patch(diff)
+    for a in annotations:
+        print ("\n")
+        print(convert_annotation_to_txt(a))
 
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
-    parser.add_argument('--generate_config', action="store_true")
-    parser.add_argument('--show_diff', action="store_true")
+    parser.add_argument('--generate-config', action="store_true")
+    parser.add_argument('--show-diff', action="store_true")
     args = parser.parse_args()
 
     p = subprocess.run("git rev-parse --show-toplevel", capture_output=True, shell=True, text=True)
@@ -292,7 +262,7 @@ def main():
         print("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
         sys.exit(2)
     
-    do_run(top_level,branch_under_review,base_url)
+    do_run(top_level,branch_under_review,base_url,args)
 
 if __name__ == "__main__":
     main()
