@@ -13,7 +13,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='annotator-git', 
 
-    version='0.9.9',  # Required
+    version='3.0.0',  # Required
     description='A tool to annotate/code review git based project',
 
     long_description=long_description,
