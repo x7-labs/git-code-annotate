@@ -213,8 +213,15 @@ def do_run(top_level,branch_under_review,base_url, args):
 
     if args.head:
         base_commit = "HEAD"
+
+    files=""
+    if args.modified:
+        cmd_output  = subprocess.getoutput("git diff --name-only")
+        file_list = map(str.strip,cmd_output.split("\n"))
+        files = "-- " + " ".join(["'"+ i.replace("'","\'") + "'" for i in file_list ])
+
     #data  = subprocess.getoutput("git diff %s" % base_commit)
-    diff  = subprocess.getoutput("git diff  -U10 %s" % base_commit)
+    diff  = subprocess.getoutput("git diff  -U10 %s %s" % (base_commit,files))
 
     if  args.show_diff:
         print(diff)
@@ -228,7 +235,10 @@ def do_run(top_level,branch_under_review,base_url, args):
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
     parser.add_argument('--generate-config', action="store_true")
-    parser.add_argument('--head', action="store_true", help="annotate uncommited changes")
+    # Annotates ... git diff HEAD
+    parser.add_argument('--head', action="store_true", help="Annotate uncommited changes")
+    # Annotates compared to the base commit but only if the file has uncommited changes
+    parser.add_argument('--modified', action="store_true", help="Perform normal code annotation but only on modified files")
     parser.add_argument('--show-diff', action="store_true")
     args = parser.parse_args()
 
