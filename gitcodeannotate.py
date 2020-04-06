@@ -9,7 +9,7 @@ import yaml
 import sys
 import argparse
 
-current_version = 3
+current_version = 4
 
 default_configuration ="""
 #
@@ -211,6 +211,8 @@ def do_run(top_level,branch_under_review,base_url, args):
             diff_commit=id
             break
 
+    if args.head:
+        base_commit = "HEAD"
     #data  = subprocess.getoutput("git diff %s" % base_commit)
     diff  = subprocess.getoutput("git diff  -U10 %s" % base_commit)
 
@@ -226,6 +228,7 @@ def do_run(top_level,branch_under_review,base_url, args):
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
     parser.add_argument('--generate-config', action="store_true")
+    parser.add_argument('--head', action="store_true", help="annotate uncommited changes")
     parser.add_argument('--show-diff', action="store_true")
     args = parser.parse_args()
 
