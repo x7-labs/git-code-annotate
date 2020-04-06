@@ -35,7 +35,7 @@ default_configuration_file_name =".git-code-annotate.yml"
 
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
-        self.std_tags = [ 'reviewer','issues','warnings','issue','warning','include','review','notes']
+        self.std_tags = [ 'reviewer','issues','warnings','issue','warning','include','review','notes','todo','fix','question']
         self.std_tags.append("issuses")
         self.tags = list()
 
@@ -105,7 +105,7 @@ def _post_process_annotation(a):
 
     # it is allowed to embed commands in the rst content the format is
     # key:value if those this regex finds these items
-    tags_re = re.compile('(\w+):(.*)')
+    tags_re = re.compile('^\W{0,2}(\w+):(.*)')
 
     # Remove empty or last comment line if empty
     for i in [a.a_start, a.a_end]:
