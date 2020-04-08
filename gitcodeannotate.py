@@ -122,7 +122,7 @@ def _post_process_annotation(a):
 
     # it is encouraged to embed tags in the annotations. The format is
     # key:value if those this regex finds these items
-    tags_re = re.compile('^\W{0,2}(.+):(.*)')
+    tags_re = re.compile('^\W{0,2}(\w+):(.*)')
  
     # Check if the first line of the annotation is indented if so assume an inline comment
     if line_start_by_indent.match(a.context[a.a_start][1]):
