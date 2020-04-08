@@ -42,12 +42,21 @@ class Options:
         self.pre_lines = 3
 
 options = Options()
+warnings= list()
 
+def warn(message):
+    global warnings
+    warnings.append(message)
+    print(message)
+
+def warn_exit(message):
+    warn(message)
+    sys.exit(2)
+    
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
         self.std_tags = [ 'reviewer','issues','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','second reviewer']
         self.tags = list()
-
         self.context = list()
         self.file = f_name                # file where the annotation applies
         self.target_start  = target_start # diff target start 
@@ -69,28 +78,23 @@ class Annotation:
         if not self.a_start and is_annotation:
             self.a_start = len(self.context)
 
-        # make sure we always have a valid end to the annotation
-        if is_annotation:
-            self.a_end = len(self.context) +1 #python style... +1
-
         self.context.append(context)
 
-
+        # make sure we always have a valid end to the annotation
+        if is_annotation:
+            self.a_end = len(self.context)
 
 def shell(cmd,err_message):
     p = subprocess.run(cmd, capture_output=True, shell=True, text=True)
     if p.returncode != 0:
-        print(err_message)
-        print("Problem executing command %s\nreturn code: %d\nstdout:%s\n\nstderr:\n%s\n\n" %(cmd, p.returncode, p.stdout , p.stderr))
-        sys.exit(2)
+        warn_exit("%s Problem executing command %s\nreturn code: %d\nstdout:%s\n\nstderr:\n%s\n\n" %(err_message,cmd, p.returncode, p.stdout , p.stderr))
     return p 
 
 def convert_annotation_to_txt(a):
     start = a.a_start - options.pre_lines 
     if not a.is_inline_comment:
         start += options.pre_lines
-    if start < 0:
-        start =0
+    start = max(start,0)
 
     # Who said python code has to be redable? 
     str = "Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
@@ -149,7 +153,7 @@ def _post_process_annotation(a):
             command,value = tags_re.match(c).groups()
             a.tags.append([command.lower(),value])
             if command.lower() not in a.std_tags:
-                print("Unknown tag %s" % command)
+                warn("Unknown tag {} in {}:{}".format(command,a.file,a.context[i][0]))
             last_tag = command
             continue
 
@@ -159,8 +163,7 @@ def _post_process_annotation(a):
                 continue
 
         if options.tags_only and len(c) > 0:
-            print("Warning non tag line in {}:{} -{}-".format(a.file,a.context[i][0],c))
-            sys.exit(2)
+            warn("Warning non tag line in {}:{} -{}-".format(a.file,a.context[i][0],c))
         in_tag = False
     return a
 
@@ -272,8 +275,7 @@ def read_config():
     options.tags_only = bool(cfg['config']['tags_only'])
 
     if options.version > current_version:
-        print("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
-        sys.exit(2)
+        warn_exit("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
     
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
@@ -288,6 +290,8 @@ def main():
             return
     read_config()
     do_run(args)
+    if len(warnings) > 0:
+        print("\nWARNINGS:\n" + "\n".join(warnings))
 
 if __name__ == "__main__":
     main()
