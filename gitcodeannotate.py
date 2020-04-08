@@ -9,7 +9,7 @@ import yaml
 import sys
 import argparse
 
-current_version = 4
+current_version = 5
 
 default_configuration ="""
 #
