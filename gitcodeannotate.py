@@ -101,7 +101,7 @@ def convert_annotation_to_txt(a):
     return str
 
 def _post_process_annotation(a):
-    """ Process the annotation and do some magic parsing on the rst contents """
+    """ Process the annotation and do some magic parsing on the contents """
 
     # matches /* and */
     empty_comment = re.compile('^\W*/\*\W*$|^\W*\*\/\W*$')
@@ -118,7 +118,7 @@ def _post_process_annotation(a):
     line_start_by_comment = re.compile("|".join(patterns))
 
     line_start_by_space = re.compile('^\W{1,2}')
-    line_start_by_indent = re.compile('^\W{2,}')
+    line_start_by_indent = re.compile('^\W{4,}')
 
     # it is encouraged to embed tags in the annotations. The format is
     # key:value if those this regex finds these items
@@ -126,7 +126,7 @@ def _post_process_annotation(a):
  
     # Check if the first line of the annotation is indented if so assume an inline comment
     if line_start_by_indent.match(a.context[a.a_start][1]):
-            a.is_inline_comment = False
+            a.is_inline_comment = True
 
     # Clean first / last line of annotation (may be an empty comment)
     for i in [a.a_start, a.a_end-1]:
