@@ -9,7 +9,7 @@ import yaml
 import sys
 import argparse
 
-current_version = 5
+current_version = 6
 
 default_configuration ="""
 #
@@ -118,7 +118,7 @@ def _post_process_annotation(a):
     line_start_by_comment = re.compile("|".join(patterns))
 
     line_start_by_space = re.compile('^\W{1,2}')
-    line_start_by_indent = re.compile('^\W{4,}')
+    line_start_by_indent = re.compile('^\W{4,}|^\t')
 
     # it is encouraged to embed tags in the annotations. The format is
     # key:value if those this regex finds these items
