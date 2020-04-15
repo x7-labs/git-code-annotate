@@ -13,7 +13,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='annotator-git', 
 
-    version='6.0.0',  # Required
+    version='7.0.0',  # Required
     description='A tool to annotate/code review git based project',
 
     long_description=long_description,
@@ -56,7 +56,7 @@ setup(
     # the `py_modules` argument instead as follows, which will expect a file
     # called `my_module.py` to exist:
     #
-    py_modules=["gitcodeannotate"],
+    py_modules=["gitcodeannotate","gitcodereport"],
     python_requires='>=3.7',
 
     install_requires=['unidiff'],
@@ -71,6 +71,7 @@ setup(
     entry_points={  # Optional
         'console_scripts': [
             'git-code-annotate=gitcodeannotate:main',
+            'git-code-report=gitcodereport:main',
         ],
     },
 

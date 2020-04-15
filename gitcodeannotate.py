@@ -8,11 +8,11 @@ import subprocess
 import yaml
 import sys
 import argparse
+import pickle
 
-current_version = 6
+current_version = 7
 
-default_configuration ="""
-#
+default_configuration ="""#
 # Configuration for the git-code-annoate tool
 # https://github.com/x7-labs/git-code-annotate
 #
@@ -23,12 +23,12 @@ config:
 # that is expected to be the currently checked out branch.
     branch_under_review: origin/master
 
-# When generating rst code links are greated to the original source code that is expected
-# to be hosted somewhere. base_url gets concatnated with the modified file
+# When generating code links are greated to the original source code that is expected
+# to be hosted somewhere. base_url gets concatnated with the name of the modified file
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
 
 # if tags_only is set to true only accept tag:value contents (no free form)
-    tags_only: False 
+    tags_only: True
 """.format(current_version)
 
 default_configuration_file_name =".git-code-annotate.yml"
@@ -36,7 +36,6 @@ default_configuration_file_name =".git-code-annotate.yml"
 class Options:
     def __init__(self):
         self.base_url = ""
-        self.version = int(1)
         self.branch_under_review = None
         self.tags_only = False
         self.pre_lines = 3
@@ -52,14 +51,14 @@ def warn(message):
 def warn_exit(message):
     warn(message)
     sys.exit(2)
-    
+
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
-        self.std_tags = [ 'reviewer','issues','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','second reviewer']
+        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary']
         self.tags = list()
         self.context = list()
         self.file = f_name                # file where the annotation applies
-        self.target_start  = target_start # diff target start 
+        self.target_start  = target_start # diff target start
         self.source_start  = source_start # diff source start
         self.a_start = None               # start of the acutal annotation
         self.a_end = 0                    #not set to None for start_new_annotation
@@ -73,7 +72,6 @@ class Annotation:
         return False
 
     def addContext(self, context,is_annotation=False):
-
         # handle start of annotation
         if not self.a_start and is_annotation:
             self.a_start = len(self.context)
@@ -88,17 +86,16 @@ def shell(cmd,err_message):
     p = subprocess.run(cmd, capture_output=True, shell=True, text=True)
     if p.returncode != 0:
         warn_exit("%s Problem executing command %s\nreturn code: %d\nstdout:%s\n\nstderr:\n%s\n\n" %(err_message,cmd, p.returncode, p.stdout , p.stderr))
-    return p 
+    return p
 
 def convert_annotation_to_txt(a):
-    start = a.a_start - options.pre_lines 
+    start = a.a_start - options.pre_lines
     if not a.is_inline_comment:
         start += options.pre_lines
     start = max(start,0)
 
-    # Who said python code has to be redable? 
-    str = "Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
-    return str
+    # Who said python code has to be redable?
+    return "Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
 
 def _post_process_annotation(a):
     """ Process the annotation and do some magic parsing on the contents """
@@ -123,7 +120,7 @@ def _post_process_annotation(a):
     # it is encouraged to embed tags in the annotations. The format is
     # key:value if those this regex finds these items
     tags_re = re.compile('^\W{0,2}(\w+):(.*)')
- 
+
     # Check if the first line of the annotation is indented if so assume an inline comment
     if line_start_by_indent.match(a.context[a.a_start][1]):
             a.is_inline_comment = True
@@ -131,10 +128,10 @@ def _post_process_annotation(a):
     # Clean first / last line of annotation (may be an empty comment)
     for i in [a.a_start, a.a_end-1]:
         if empty_comment.match(a.context[i][1]):
-            a.context[i][1] =""
+            a.context[i][1] = ""
 
     # Remove leading # or /* and * // and also c** style /* */ comments
-    for i in range(a.a_start,a.a_end):
+    for i in range(a.a_start, a.a_end):
         c = a.context[i][1]
         if line_start_by_comment.match(c):
             # because python regexp returns a list of groups when the *or* operator is used
@@ -158,9 +155,9 @@ def _post_process_annotation(a):
             continue
 
         if in_tag and line_start_by_indent.match(c):
-                a.tags[len(a.tags)-1][1]=  a.tags[len(a.tags)-1][1]  +"\n" + value
-                #print("Multline tag %s -%s-" % (last_tag,c))
-                continue
+            a.tags[len(a.tags)-1][1]=  a.tags[len(a.tags)-1][1]  +"\n" + value
+            #print("Multline tag %s -%s-" % (last_tag,c))
+            continue
 
         if options.tags_only and len(c) > 0:
             warn("Warning non tag line in {}:{} -{}-".format(a.file,a.context[i][0],c))
@@ -168,15 +165,15 @@ def _post_process_annotation(a):
     return a
 
 def create_annotations_from_patch(patch):
-    # This is where the magic happens, a unified diff formatted patch 
-    # as for example created by git diff get parsed and gets converted 
+    # This is where the magic happens, a unified diff formatted patch
+    # as for example created by git diff get parsed and gets converted
     # into annotations
 
     annotations = list()
     try:
         pset = PatchSet(patch)
         for mod_files in pset.modified_files:
-            # Parse hunks , create annotation 
+            # Parse hunks , create annotation
 
             for hunk in mod_files:
                 a = Annotation(mod_files.path, hunk.source_start, hunk.target_start)
@@ -188,9 +185,8 @@ def create_annotations_from_patch(patch):
                             # object for every section of added content
                             annotations.append(_post_process_annotation(a))
                             b = Annotation(mod_files.path, a.source_start, a.target_start)
-                            # copy lines from the previous annotation for context 
-                            for item in a.context:
-                                b.addContext(item,False) 
+                            # copy lines from the previous annotation for context
+                            [ b.addContext(item,False) for item in a.context ]
                             a = b
                         a.addContext([hunk.target_start + offset,format(line[1:].rstrip('\n'))],True)
                     elif line[0] not in ['+','-']:
@@ -234,21 +230,23 @@ def do_run(args):
     elif args.head:
         base_commit = "HEAD"
 
-    p  = shell("git diff -U10 %s %s" % (base_commit,files),"Create the diff")
-    diff = p.stdout
+    diff  = shell("git diff -U10 %s %s" % (base_commit,files),"Create the diff").stdout
+
     if  args.diff:
         print(diff)
         return
 
     annotations = create_annotations_from_patch(diff)
+
+    if args.save:
+        pickle.dump( annotations, open( "annotations.p", "wb" ) )
+
     for a in annotations:
-        print ("\n")
-        print(convert_annotation_to_txt(a))
+        print("\n%s" % convert_annotation_to_txt(a))
 
 def get_top_level_directory():
     # find top level directory
-    p = shell("git rev-parse --show-toplevel","determine top level directory")
-    return p.stdout.strip()
+    return shell("git rev-parse --show-toplevel","determine top level directory").stdout.strip()
 
 def get_config_file():
     return os.path.join(get_top_level_directory(),default_configuration_file_name)
@@ -256,12 +254,11 @@ def get_config_file():
 def generate_config():
     with open(get_config_file(), 'w', encoding='utf-8') as ymlfile:
         ymlfile.write(default_configuration)
-        ymlfile.close()
     print("Config file {} generated".format(get_config_file()))
 
 def read_config():
     global options
-    # load the default configuration 
+    # load the default configuration
     cfg = yaml.load(default_configuration,Loader=yaml.BaseLoader)
 
     if os.path.isfile(get_config_file()):
@@ -271,18 +268,18 @@ def read_config():
 
     options.branch_under_review = cfg['config']['branch_under_review']
     options.base_url = cfg['config']['base_url']
-    options.version = int(cfg['config']['version'])
     options.tags_only = bool(cfg['config']['tags_only'])
 
-    if options.version > current_version:
+    if int(cfg['config']['version']) > current_version:
         warn_exit("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
-    
+
 def main():
     parser = argparse.ArgumentParser(prog='git-code-annotate')
     parser.add_argument('--generate-config', action="store_true")
     parser.add_argument('--modified', action="store_true", help="Perform normal code annotation but only on modified files")
     parser.add_argument('--head', action="store_true", help="Perform code annotation on uncommited change")
     parser.add_argument('--diff', action="store_true", help="show diff insead of the annotations")
+    parser.add_argument('--save', action="store_true", help="Save annotations")
     args = parser.parse_args()
 
     if args.generate_config:
