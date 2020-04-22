@@ -54,7 +54,7 @@ def warn_exit(message):
 
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
-        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary']
+        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary','type','importance']
         self.tags = list()
         self.context = list()
         self.file = f_name                # file where the annotation applies
@@ -119,7 +119,7 @@ def _post_process_annotation(a):
 
     # it is encouraged to embed tags in the annotations. The format is
     # key:value if those this regex finds these items
-    tags_re = re.compile('^\W{0,2}(\w+):(.*)')
+    tags_re = re.compile('^\W{0,2}(\w+):[ \t]+(.*)')
 
     # Check if the first line of the annotation is indented if so assume an inline comment
     if line_start_by_indent.match(a.context[a.a_start][1]):
