@@ -61,7 +61,7 @@ def main():
     txt()
 
     b = []
-
+    types = {}
     for a in annotations:
         # convert tags to a dict
         d = {i[0]:i[1] for i in a.tags}
@@ -71,14 +71,21 @@ def main():
 #                print("{:10s}:{}".format(tag, d[tag]))
 
         if "importance" in keys:
-            print("'{}'".format(d["importance"]))
+            #print("'{}'".format(d["importance"]))
             if d["importance"] in ["Low"]:
-                print("Skipping annotation (low priotity)")
+                #print("Skipping annotation (low priotity)")
                 continue
 
         if "warning" not in keys and "issue" not in keys:
-            print("Skipping annotation (non issue/warning) {}".format(d))
+            #print("Skipping annotation (non issue/warning) {}".format(d))
             continue
+
+        if "type" in keys:
+            val = d["type"]
+            if val in types.keys():
+                types[val] += types[val] + 1
+            else:
+                types[val] = 1
 
         b.append(a)
         if "issues" in d.keys():
@@ -99,7 +106,11 @@ def main():
     t.append(["Issue count", "%d" % issues])
     table(t)
 
-
+    t = []
+    for i in types.keys():
+        t.append([i,str(types[i])])
+    table(t)
+    
     for a in b:
         print("\n%s" % convert_annotation_to_txt(a))
 if __name__ == "__main__":

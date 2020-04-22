@@ -10,7 +10,7 @@ import sys
 import argparse
 import pickle
 
-current_version = 7
+current_version = 8
 
 default_configuration ="""#
 # Configuration for the git-code-annoate tool
