@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import pickle
 
+import os
 from gitcodeannotate import Annotation
 from gitcodeannotate import read_config
 from gitcodeannotate import convert_annotation_to_txt
+from gitcodeannotate import options
 def h(msg,heading):
     print(msg)
     print(heading * len(msg))
@@ -60,6 +62,10 @@ def main():
     h2("Summary")
     txt()
 
+    if os.path.isfile("summary.txt"):
+        txt()
+        with open('summary.txt', 'r') as file:
+            txt(file.read())
     b = []
     types = {}
     for a in annotations:
@@ -111,7 +117,27 @@ def main():
         t.append([i,str(types[i])])
     table(t)
     
+    h2("Annotations (Medium and High)")
+
     for a in b:
-        print("\n%s" % convert_annotation_to_txt(a))
+        t = []
+        line = a.source_start + a.a_start
+        line_annotated = a.context[a.a_start][0]
+        txt()
+        base = options.base_url
+        annotated =options.annotation_url
+        t.append(['url',' `src <{}{}#L{}>`__ | `annotated <{}{}#L{}>`__'.format(base,a.file,line,annotated,a.file,line_annotated,a.file,line_annotated)])
+
+        for tag in a.tags:
+            if tag[0] in ['warning','issue','importance','type']:
+                t.append([tag[0].capitalize(),tag[1].replace("\n"," ")])
+        #print(len(t))
+        #print(a.tags)
+        table(t)
+        print()
+        print(".. code-block:: c")
+        print("")
+        print("    " + "\n    ".join(convert_annotation_to_txt(a).split("\n")))
+        print("")
 if __name__ == "__main__":
     main()

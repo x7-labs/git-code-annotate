@@ -10,7 +10,7 @@ import sys
 import argparse
 import pickle
 
-current_version = 8
+current_version = 9
 
 default_configuration ="""#
 # Configuration for the git-code-annoate tool
@@ -26,6 +26,7 @@ config:
 # When generating code links are greated to the original source code that is expected
 # to be hosted somewhere. base_url gets concatnated with the name of the modified file
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
+    annotation_url: "https://gitlab.com/myuser/annotation-tool/-/blob/annotations/"
 
 # if tags_only is set to true only accept tag:value contents (no free form)
     tags_only: True
@@ -36,6 +37,7 @@ default_configuration_file_name =".git-code-annotate.yml"
 class Options:
     def __init__(self):
         self.base_url = ""
+        self.annotation_url = ""
         self.branch_under_review = None
         self.tags_only = False
         self.pre_lines = 3
@@ -155,7 +157,7 @@ def _post_process_annotation(a):
             continue
 
         if in_tag and line_start_by_indent.match(c):
-            a.tags[len(a.tags)-1][1]=  a.tags[len(a.tags)-1][1]  +"\n" + value
+            a.tags[len(a.tags)-1][1]=  a.tags[len(a.tags)-1][1]  +"\n" + c.strip()
             #print("Multline tag %s -%s-" % (last_tag,c))
             continue
 
@@ -268,6 +270,7 @@ def read_config():
 
     options.branch_under_review = cfg['config']['branch_under_review']
     options.base_url = cfg['config']['base_url']
+    options.annotation_url = cfg['config']['annotation_url']
     options.tags_only = bool(cfg['config']['tags_only'])
 
     if int(cfg['config']['version']) > current_version:
