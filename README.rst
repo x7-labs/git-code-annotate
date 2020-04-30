@@ -15,7 +15,7 @@ The basic concept for the tool is to branch of the code that need to be reviewed
 Annotation syntax
 =================
 
-All additions to the code are seen as annotations and the annotation tool will provide some contents. That said some preprosessing on the annotations is performed
+All additions to the code are seen as annotations and the annotation tool will provide some context. That said some preprosessing on the annotations is performed
 
 * Annotations may start with an enpty comment line
 * Lines may start with # , //, */ or /*. These comment markers and the white spaces that before those markers will be removed.
@@ -126,7 +126,11 @@ After making the modification run git-code-annotate
     	git-code-annotate
 
 
-Sample outout
+The annotation tool creates text formated in the form of filename.c:linenumber. This is recognized by tools like vs code and clicking on them will open the file under review
+at the correct location. 
+
+
+Sample output
 
 .. code-block:: sh
 
@@ -161,14 +165,9 @@ When you are happy with the changes you are free to commit the change into the a
     git add vuln.c
     git commit -m "vuln.c review"
 
-
-
-
 Configuration
 =============
 
-The annotation tool creates text formated in the form of filename.c:linenumber. This is recognized by tools  (like vs code) and clicking on them will open the file under review
-at the correct location.
 
 The tool can also generate links to the original (non annotated code). For that to work the configuration need to be adapted.
 
@@ -180,7 +179,7 @@ Generate the initial configuration
 
 modify the configuration according to https://github.com/x7-labs/git-code-annotate-tutorial/blob/annotation_config/.git-code-annotate.yml
 
-If you want to add the configuration to the repository this might create problems because the configuration will be viewed as an annotation. There are several ways around this. you can add the configuration
+If you want to add the configuration to the repository this might create problems because the configuration will be viewed as an annotation. To work around this you can add the configuration
 to the git repository *before* creating the annotation branch. Therefore the differences between the master branch and the annotation branch will only contain the differences. 
 
 
@@ -191,3 +190,5 @@ Generating a report
 
     git-code-annoate --save
     git-code-report > demo_report.rst
+
+Should result in a report like `The demo report <demo_report.rst>`_
