@@ -10,7 +10,7 @@ import sys
 import argparse
 import pickle
 
-current_version = 9
+current_version = 10
 
 default_configuration ="""#
 # Configuration for the git-code-annoate tool
@@ -56,7 +56,7 @@ def warn_exit(message):
 
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
-        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary','type','importance']
+        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary','type','importance','suspicion']
         self.tags = list()
         self.context = list()
         self.file = f_name                # file where the annotation applies
@@ -207,22 +207,6 @@ def do_run(args):
     #global options
     # By default compare against the master branch
     base_commit=options.branch_under_review
-
-    # List commits on this branch and find the first non "dev:" commit
-    # Based on this do a git diff including all the commits
-    output  = subprocess.getoutput("git log %s... --oneline" % base_commit)
-    commits = map(str.strip,output.split("\n"))
-    for commit in commits:
-        commit_regex = re.compile('^([0-9a-f]*) (.*)')
-        if not commit_regex.match(commit):
-            continue
-
-        id,message = commit_regex.match(commit).groups()
-
-        if message.startswith("dev"):
-            print("Base commit is %s" % commit)
-            diff_commit=id
-            break
 
     files=""
     if args.modified:

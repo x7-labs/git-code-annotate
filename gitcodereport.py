@@ -115,7 +115,8 @@ def main():
     t = []
     for i in types.keys():
         t.append([i,str(types[i])])
-    table(t)
+    if len(t) > 0:
+        table(t)
     
     h2("Annotations (Medium and High)")
 
