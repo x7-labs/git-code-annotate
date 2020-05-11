@@ -44,6 +44,15 @@ First we need to install the tool using pip3
 
 For this tutorial we created a git repository containing some vulnerable code and we are going to review this code. We start by cloning the repository
 
+
+Are you a developer wanting to make some modifications?
+
+.. code-bloack:: sh
+
+    git clone https://github.com/x7-labs/git-code-annotate
+    cd git-code-annotate
+    pip3 install -e .
+
 .. code-block:: sh
 
  git clone https://github.com/x7-labs/git-code-annotate-tutorial.git
