@@ -85,8 +85,7 @@ To integrate our annotation tool and keep the original code intact (and compilin
 .. code-block:: sh
 
     cd git-code-annotate-tutorial
-    git branch annotation
-    git checkout annotation
+    git checkout -b annotation
 
 
 We are ready for the first run. As we did not add any annotation the output of the following should be empty
