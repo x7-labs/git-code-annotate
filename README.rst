@@ -47,7 +47,7 @@ For this tutorial we created a git repository containing some vulnerable code an
 
 Are you a developer wanting to make some modifications?
 
-.. code-bloack:: sh
+.. code-block:: sh
 
     git clone https://github.com/x7-labs/git-code-annotate
     cd git-code-annotate
