@@ -41,10 +41,6 @@ First we need to install the tool using pip3
 
     pip3 install --user git+https://github.com/x7-labs/git-code-annotate
 
-
-For this tutorial we created a git repository containing some vulnerable code and we are going to review this code. We start by cloning the repository
-
-
 Are you a developer wanting to make some modifications?
 
 .. code-block:: sh
@@ -52,6 +48,8 @@ Are you a developer wanting to make some modifications?
     git clone https://github.com/x7-labs/git-code-annotate
     cd git-code-annotate
     pip3 install -e .
+    
+For this tutorial we created a git repository containing some vulnerable code and we are going to review this code. We start by cloning the repository
 
 .. code-block:: sh
 
