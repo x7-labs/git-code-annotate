@@ -85,7 +85,7 @@ class Annotation:
             self.a_end = len(self.context)
 
 def shell(cmd,err_message):
-    p = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+    p = subprocess.run(cmd, capture_output=True, shell=True, text=True, encoding="iso-8859-15")
     if p.returncode != 0:
         warn_exit("%s Problem executing command %s\nreturn code: %d\nstdout:%s\n\nstderr:\n%s\n\n" %(err_message,cmd, p.returncode, p.stdout , p.stderr))
     return p
