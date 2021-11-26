@@ -181,7 +181,7 @@ Generate the initial configuration
 
 .. code-block:: sh
 
-        git-code-annotate --generate_config
+        git-code-annotate --generate-config
 
 modify the configuration according to https://github.com/x7-labs/git-code-annotate-tutorial/blob/annotation_config/.git-code-annotate.yml
 
