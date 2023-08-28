@@ -194,7 +194,7 @@ Generating a report
 
 .. code-block:: sh
 
-    git-code-annoate --save
+    git-code-annotate --save
     git-code-report > demo_report.rst
 
 Should result in a report like `The demo report <demo_report.rst>`_
