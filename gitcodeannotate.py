@@ -21,7 +21,7 @@ config:
 # When doing annotations the "untouched" code is normally on a different branch
 # e.g. the master branch and the annotation tool is being run on an annotation branch
 # that is expected to be the currently checked out branch.
-    branch_under_review: origin/master
+    branch_under_review: origin/main
 
 # When generating code links are greated to the original source code that is expected
 # to be hosted somewhere. base_url gets concatnated with the name of the modified file
@@ -62,7 +62,7 @@ class Annotation:
         self.file = f_name                # file where the annotation applies
         self.target_start  = target_start # diff target start
         self.source_start  = source_start # diff source start
-        self.a_start = None               # start of the acutal annotation
+        self.a_start = None               # start of the actual annotation
         self.a_end = 0                    #not set to None for start_new_annotation
         self.is_inline_comment = False    # inline annotation get a different treatment
 
@@ -97,7 +97,7 @@ def convert_annotation_to_txt(a):
     start = max(start,0)
 
     # Who said python code has to be redable?
-    return "Looking at file {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
+    return "File {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
 
 def _post_process_annotation(a):
     """ Process the annotation and do some magic parsing on the contents """
@@ -183,16 +183,18 @@ def create_annotations_from_patch(patch):
                 for line in hunk.target:
                     if line[0] == '+':
                         if a.start_new_annotation():
-                            # A single hunk can contain multiple annotations we create and annotation
+                            # A single hunk can contain multiple annotations we create an annotation
                             # object for every section of added content
                             annotations.append(_post_process_annotation(a))
                             b = Annotation(mod_files.path, a.source_start, a.target_start)
                             # copy lines from the previous annotation for context
                             [ b.addContext(item,False) for item in a.context ]
                             a = b
+                        #a.addContext([hunk.source_start + offset,format(line[1:].rstrip('\n'))],True)
                         a.addContext([hunk.target_start + offset,format(line[1:].rstrip('\n'))],True)
+                        offset -= 1
                     elif line[0] not in ['+','-']:
-                        a.addContext([hunk.source_start + offset,format(line[1:].rstrip('\n'))],False)
+                        a.addContext([hunk.target_start + offset,format(line[1:].rstrip('\n'))],False)
                     #keep track of the offset compared to the hunk
                     if line[0] != '-':
                         offset += 1
