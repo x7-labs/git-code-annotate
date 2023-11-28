@@ -17,11 +17,11 @@ Summary
 Annotations (Medium and High)
 =============================
 
-+-----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|url  | `src <https://github.com/x7-labs/git-code-annotate-tutorial/blob/master/vuln.c#L10>`__ | `annotated <https://gitlab.com/myuser/annotation-tool/-/blob/annotations/vuln.c#L10>`__|
-+-----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|Issue|unsafe use of strcmp The code listed here uses the strcmp function on a user provided input. Using strmp is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_ |
-+-----+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|url  | `src <https://github.com/x7-labs/git-code-annotate-tutorial/blob/master/vuln.c#L10>`__ | `annotated <https://github.com/x7-labs/git-code-annotate-tutorial/blob/annotation_demo/vuln.c#L10>`__|
++-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|Issue|unsafe use of strcmp The code listed here uses the strcmp function on a user provided input. Using strmp is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_               |
++-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 .. code-block:: c
