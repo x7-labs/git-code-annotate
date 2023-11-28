@@ -17,32 +17,31 @@ Summary
 Annotations (Medium and High)
 =============================
 
-+-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|url  | `src <https://github.com/x7-labs/git-code-annotate-tutorial/blob/master/vuln.c#L10>`__ | `annotated <https://github.com/x7-labs/git-code-annotate-tutorial/annotation_demo/blob/vuln.c#L10>`__|
-+-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|Issue|unsafe use of strcmp The code listed here uses the strcmp function on a user provided input. Using strmp is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_               |
-+-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|url  | `src <https://gitlab.com/myuser/annotation-tool/-/blob/master/vuln.c#L10>`__ | `annotated <https://gitlab.com/myuser/annotation-tool/-/blob/annotations/vuln.c#L10>`__         |
++-----+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|Issue|unsafe use of strcmp The code listed here uses the strcmp function on a user provided input. Using strmp is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_|
++-----+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 .. code-block:: c
 
-    Looking at file vuln.c:10 :
+    File vuln.c:10 :
          7 : #define TEST_STR	"test"
          8 : 
          9 : void parse(char *buf) {
+    A   10 : Issue: unsafe use of strcmp
+    A   10 :     The code listed here uses the strcmp function on a user provided input. Using strmp
+    A   10 :     is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
     A   10 : 
-    A   11 :  Issue: unsafe use of strcmp
-    A   12 :     The code listed here uses the strcmp function on a user provided input. Using strmp
-    A   13 :     is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
-    A   14 : 
-        15 : 	if (strcmp(buf, TEST_STR))
-        16 : 		printf("parsed test\n");
-        17 : }
-        18 : 
-        19 : int main() {
-        20 : 	void *buf = malloc(BUF_SIZE);
-        21 : 	read(0, buf, BUF_SIZE);
-        22 : 	parse((char *)buf);
-        23 : 	return 0;
-        24 : }
+        10 : 	if (strcmp(buf, TEST_STR))
+        11 : 		printf("parsed test\n");
+        12 : }
+        13 : 
+        14 : int main() {
+        15 : 	void *buf = malloc(BUF_SIZE);
+        16 : 	read(0, buf, BUF_SIZE);
+        17 : 	parse((char *)buf);
+        18 : 	return 0;
+        19 : }
 

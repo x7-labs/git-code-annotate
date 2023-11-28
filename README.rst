@@ -138,28 +138,26 @@ at the correct location.
 
 Sample output
 
-.. code-block:: sh
+.. code-block:: c
 
-    Looking at file vuln.c:10 :
-        7 : #define TEST_STR	"test"
-        8 : 
-        9 : void parse(char *buf) {
+    File vuln.c:10 :
+         7 : #define TEST_STR   "test"
+         8 : 
+         9 : void parse(char *buf) {
+    A   10 : Issue: unsafe use of strcmp
+    A   10 :     The code listed here uses the strcmp function on a user provided input. Using strmp
+    A   10 :     is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
     A   10 : 
-    A   11 :  Issue: unsafe use of strcmp
-    A   12 :     The code listed here uses the strcmp function on a user provided input. Using strmp
-    A   13 :     is generally considered unsafe see `strcmp <http://no.more.strmp.org>`_
-    A   14 : 
-        15 : 	if (strcmp(buf, TEST_STR))
-        16 : 		printf("parsed test\n");
-        17 : }
-        18 : 
-        19 : int main() {
-        20 : 	void *buf = malloc(BUF_SIZE);
-        21 : 	read(0, buf, BUF_SIZE);
-        22 : 	parse((char *)buf);
-        23 : 	return 0;
-        24 : }
-
+        10 :    if (strcmp(buf, TEST_STR))
+        11 :            printf("parsed test\n");
+        12 : }
+        13 : 
+        14 : int main() {
+        15 :    void *buf = malloc(BUF_SIZE);
+        16 :    read(0, buf, BUF_SIZE);
+        17 :    parse((char *)buf);
+        18 :    return 0;
+        19 : }
 
 The reviewer made sure that the code would still compile after adding the comments by putting
 the review inside a comment block but this is not stricly needed.
