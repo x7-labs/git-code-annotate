@@ -8,12 +8,11 @@ import subprocess
 import yaml
 import sys
 import argparse
-import pickle
 
-current_version = 10
+current_version = 11
 
 default_configuration ="""#
-# Configuration for the git-code-annoate tool
+# Configuration for the git-code-annotate tool
 # https://github.com/x7-labs/git-code-annotate
 #
 config:
@@ -25,22 +24,24 @@ config:
 
 # When generating code links are greated to the original source code that is expected
 # to be hosted somewhere. base_url gets concatnated with the name of the modified file
+    link: True
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
     annotation_url: "https://gitlab.com/myuser/annotation-tool/-/blob/annotations/"
 
-# if tags_only is set to true only accept tag:value contents (no free form)
-    tags_only: True
+# if sphinx mode is enabled line numbering and hilighing of the lines happens through sphinx
+    sphinx: True
 """.format(current_version)
 
 default_configuration_file_name =".git-code-annotate.yml"
 
 class Options:
     def __init__(self):
+        self.link = True
         self.base_url = ""
         self.annotation_url = ""
         self.branch_under_review = None
-        self.tags_only = False
         self.pre_lines = 3
+        self.sphinx = True
 
 options = Options()
 warnings= list()
@@ -50,13 +51,9 @@ def warn(message):
     warnings.append(message)
     print(message)
 
-def warn_exit(message):
-    warn(message)
-    sys.exit(2)
-
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
-        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary','type','importance','suspicion']
+        self.std_tags = [ 'issues','reviewer','verifier','warnings','issue','warning','include','review','note','notes','todo','fix','question','suspicious','summary','importance','suspicion']
         self.tags = list()
         self.context = list()
         self.file = f_name                # file where the annotation applies
@@ -90,14 +87,31 @@ def shell(cmd,err_message):
         warn_exit("%s Problem executing command %s\nreturn code: %d\nstdout:%s\n\nstderr:\n%s\n\n" %(err_message,cmd, p.returncode, p.stdout , p.stderr))
     return p
 
-def convert_annotation_to_txt(a):
+def convert_annotation_to_rst(a):
+    #print(a.a_start)
     start = a.a_start - options.pre_lines
-    if not a.is_inline_comment:
-        start += options.pre_lines
     start = max(start,0)
+    #print(start)
+    #print(a.context)
 
     # Who said python code has to be redable?
-    return "File {}:{} :\n".format(a.file,a.context[a.a_start][0]) + "\n".join([ "{} {:4d} : {}".format("A" if (i >= a.a_start and i < a.a_end)  else " ", a.context[i][0],a.context[i][1]) for i in range(start,len(a.context)) ])
+    return "File {}:{} :\n".format(
+        a.file, a.context[a.a_start][0]) + "\n".join(
+            [ "{} {:4d} : {}".format(
+                "*" if (i >= a.a_start and i < a.a_end)  else " ", 
+                a.context[i][0],
+                a.context[i][1]) for i in range(start,len(a.context)) ]
+        )
+
+def convert_annotation_to_sphinx(a):
+    start = a.a_start - options.pre_lines
+#    if a.is_inline_comment:
+#        start += options.pre_lines
+    start = max(start,0)
+
+    return "\n".join([ "{} {}".format(
+        "* " if (i == a.a_end )  else "  ", 
+        a.context[i][1]) for i in range(start,len(a.context)) if i < a.a_start or i >= a.a_end])
 
 def _post_process_annotation(a):
     """ Process the annotation and do some magic parsing on the contents """
@@ -161,7 +175,7 @@ def _post_process_annotation(a):
             #print("Multline tag %s -%s-" % (last_tag,c))
             continue
 
-        if options.tags_only and len(c) > 0:
+        if len(c) > 0:
             warn("Warning non tag line in {}:{} -{}-".format(a.file,a.context[i][0],c))
         in_tag = False
     return a
@@ -227,10 +241,11 @@ def do_run(args):
     annotations = create_annotations_from_patch(diff)
 
     if args.save:
-        pickle.dump( annotations, open( "annotations.p", "wb" ) )
+        with open("annotations.p","w") as fh:
+            fh.write(diff)
 
     for a in annotations:
-        print("\n%s" % convert_annotation_to_txt(a))
+        print("\n%s" % convert_annotation_to_rst(a))
 
 def get_top_level_directory():
     # find top level directory
@@ -254,10 +269,11 @@ def read_config():
             c = yaml.load(ymlfile,Loader=yaml.BaseLoader)
             cfg['config'].update(c['config'])
 
+    options.link = bool(cfg['config']['link'] == 'True')
     options.branch_under_review = cfg['config']['branch_under_review']
     options.base_url = cfg['config']['base_url']
     options.annotation_url = cfg['config']['annotation_url']
-    options.tags_only = bool(cfg['config']['tags_only'])
+    options.sphinx = bool(cfg['config']['sphinx'] == 'True')
 
     if int(cfg['config']['version']) > current_version:
         warn_exit("ERROR:Detected a more recent version of the configuration. Upgrade git-code-annotate")
@@ -278,6 +294,7 @@ def main():
     do_run(args)
     if len(warnings) > 0:
         print("\nWARNINGS:\n" + "\n".join(warnings))
+        os.exit(2)
 
 if __name__ == "__main__":
     main()
