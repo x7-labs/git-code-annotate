@@ -294,7 +294,7 @@ def main():
     do_run(args)
     if len(warnings) > 0:
         print("\nWARNINGS:\n" + "\n".join(warnings))
-        os.exit(2)
+        sys.exit(2)
 
 if __name__ == "__main__":
     main()
