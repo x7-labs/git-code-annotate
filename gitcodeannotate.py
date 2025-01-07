@@ -13,6 +13,7 @@ current_version = 11
 
 default_configuration ="""#
 # Configuration for the git-code-annotate tool
+#
 # https://github.com/x7-labs/git-code-annotate
 #
 config:
@@ -23,12 +24,12 @@ config:
     branch_under_review: origin/main
 
 # When generating code links are greated to the original source code that is expected
-# to be hosted somewhere. base_url gets concatnated with the name of the modified file
+# to be hosted somewhere. base_url gets concatenated with the name of the modified file
     link: True
     base_url: "https://gitlab.com/myuser/annotation-tool/-/blob/master/"
     annotation_url: "https://gitlab.com/myuser/annotation-tool/-/blob/annotations/"
 
-# if sphinx mode is enabled line numbering and hilighing of the lines happens through sphinx
+# if sphinx mode is enabled line numbering and highlighting of the lines happens through sphinx
     sphinx: True
 """.format(current_version)
 
@@ -50,6 +51,10 @@ def warn(message):
     global warnings
     warnings.append(message)
     print(message)
+
+def warn_exit(message):
+    warn(message)
+    sys.exit(2)
 
 class Annotation:
     def __init__(self, f_name, source_start, target_start):
